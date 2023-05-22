@@ -26,9 +26,9 @@ export default function Home() {
             const recaptcha = await recaptchaPromise
             const action = nanoid(32)
             const token = await recaptcha.execute(action)
-            const resp = await (await fetch("https://www.google.com/recaptcha/api/siteverify", { method: "POST" })).json()
             server$(async (data: FormData, token: string, action: string) => {
-                if(resp.success && resp.hostname == "localhost" && resp.score >= 0.65) {
+                const resp = await (await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET ?? "unknown"}&response=${token}`, { method: "POST" })).json()
+                if(resp.success && resp.action == action && resp.hostname == "localhost" && resp.score >= 0.65) {
                     await kv.set(data.get("newURL")!.toString(), data.get("toAlias")!.toString())
                 }
             })(data, token, action)
