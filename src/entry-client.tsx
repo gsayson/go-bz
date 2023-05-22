@@ -1,3 +1,6 @@
-import { mount, StartClient } from "solid-start/entry-client";
+import { mount, StartClient } from "solid-start/entry-client"
+import { load } from "recaptcha-v3"
 
-mount(() => <StartClient />, document);
+console.log(process.env)
+
+mount(() => <StartClient/>, document)

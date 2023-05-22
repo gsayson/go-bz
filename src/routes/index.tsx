@@ -1,30 +1,52 @@
-import { Accessor, Show, createSignal, getOwner, runWithOwner } from "solid-js"
-import { createRouteAction } from "solid-start"
+import { Accessor, Setter, Show, createEffect, createSignal } from "solid-js"
+import { createRouteAction, createRouteData, useRouteData } from "solid-start"
 import { kv } from "@vercel/kv"
-import server$ from "solid-start/server"
+import { nanoid } from "nanoid"
+import server$, { createServerData$ } from "solid-start/server"
+import { ReCaptchaInstance, load } from "recaptcha-v3"
+import { isServer } from "solid-js/web"
+
+export function routeData() {
+    return createServerData$(async () => { return process.env.SITE_KEY })()
+}
 
 export default function Home() {
+    const siteKey = useRouteData<typeof routeData>()!
+    let recaptchaPromise: Promise<ReCaptchaInstance>
+    if(!isServer) {
+        recaptchaPromise = load(siteKey, {
+            useRecaptchaNet: true,
+            autoHideBadge: true
+        })
+    }
     const [newLink, setNewLink] = createSignal("")
     const [error, setError] = createSignal(false)
-    const [isForever, setIsForever] = createSignal(false)
     const [_, { Form }] = createRouteAction(async (data: FormData) => {
-        console.log(data.get("expiry"))
-        setError(true)
-        if(data.get("expiry")?.toString() != "null") {
-            console.log("YES")
-            setError(false)
+        if(!isServer) {
+            const recaptcha = await recaptchaPromise
+            const action = nanoid(32)
+            const token = await recaptcha.execute(action)
+            const resp = await (await fetch("https://www.google.com/recaptcha/api/siteverify", { method: "POST" })).json()
+            server$(async (data: FormData, token: string, action: string) => {
+                if(resp.success && resp.hostname == "localhost" && resp.score >= 0.65) {
+                    await kv.set(data.get("newURL")!.toString(), data.get("toAlias")!.toString())
+                }
+            })(data, token, action)
         }
-        console.log("Aliasing " + data.get("newURL")!.toString() + " to " + data.get("toAlias")!.toString())
-        server$(async (data: FormData) => {
-            await kv.set(data.get("newURL")!.toString(), data.get("toAlias")!.toString())
-        })(data)
     })
     let ref: HTMLParagraphElement
     function LinkPreview(props: {
         link: Accessor<string>
     }) {
         return (
-            <p class="text-gray-400 dark:text-[#5a5a5a] mb-6">Your URL will appear as <span class="font-mono"> https://go.gsn.bz/{props.link().trim().length != 0 ? props.link() : "<random ID>"}</span>.</p>
+            <Show 
+                when={props.link().trim().length != 0}
+                fallback={
+                    <p class="text-gray-400 dark:text-[#5a5a5a] mb-6">Please customize your link.</p>
+                }
+            >
+                <p class="text-gray-400 dark:text-[#5a5a5a] mb-6">Your URL will appear as <span class="font-mono"> https://go.gsn.bz/{props.link().trim().length != 0 ? props.link() : "<random ID>"}</span>.</p>
+            </Show>
         )
     }
     return (
@@ -50,20 +72,18 @@ export default function Home() {
                     setNewLink(event.currentTarget.value ?? "")
                 }}/>
                 <label for="input-group-1" class="block mb-2 text-sm font-medium text-black dark:text-white">Select your link's lifetime</label>
-                <select name="expiry" required={true} class={`bg-gray-300 text-black text-sm w-full p-2.5 mb-4 dark:bg-[#1c1c1c] border ${error() ? "border-red-600" : "border-transparent"} dark:text-white`} onChange={(event) => {
-                    setIsForever(event.target.value == "ne")
-                }}>
+                <select name="expiry" required={true} class={`bg-gray-300 text-black text-sm w-full p-2.5 mb-4 dark:bg-[#1c1c1c] border ${error() ? "border-red-600" : "border-transparent"} dark:text-white`}>
                     <option value="d1" selected>1 day</option>
                     <option value="d5">5 days</option>
                     <option value="w1">1 week</option>
                     <option value="w2">2 weeks</option>
-                    <option value="ne">Forever</option>
                 </select>
-                <Show when={isForever()}>
+                <Show when={true}>
                     <p class="text-red-700 dark:text-red-500 mb-3">The "Forever" lifetime is only available for authenticated users. Please log in to create links.</p>
                 </Show>
                 <LinkPreview link={newLink}/>
-                <input type="submit" class="bg-blue-700 hover:bg-blue-600 transition-colors duration-150 text-sm p-[0.625rem] w-full text-center text-white hover:cursor-pointer" value="Alias URL"/>
+                <input type="submit" class="bg-blue-700 hover:bg-blue-600 disabled:hover:cursor-default disabled:bg-blue-800 disabled:text-gray-400 disabled:hover:bg-blue-800 transition-colors duration-150 text-sm p-[0.625rem] w-full text-center text-white hover:cursor-pointer" value="Alias URL"/>
+                <p class="text-sm mt-4 text-gray-400 dark:text-[#5a5a5a]">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" class="text-blue-500 border-b border-transparent hover:border-blue-500 transition duration-150">Privacy Policy</a> and <a href="https://policies.google.com/terms" class="text-blue-500 border-b border-transparent hover:border-blue-500 transition duration-150">Terms of Service</a> apply.</p>
             </Form>
         </main>
     )

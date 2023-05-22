@@ -25,16 +25,6 @@ export default function Root() {
             <Body class="bg-white text-black dark:bg-[#0b0b0b] dark:text-white">
                 <Suspense>
                     <ErrorBoundary>
-                        <nav class="w-screen absolute top-0 align-middle pt-6 px-6 lg:px-8 flex justify-between">
-                            <div class="flex">
-                                <p>Login</p>
-                                &ensp;&bullet;&ensp;
-                                <p>My Links</p>
-                            </div>
-                            <div class="flex">
-                                <p>Logout</p>
-                            </div>
-                        </nav>
                         <Routes>
                             <FileRoutes/>
                         </Routes>
