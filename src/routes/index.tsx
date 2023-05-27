@@ -26,6 +26,7 @@ export default function Home() {
             const token = await recaptcha.execute("postURL")
             console.log("Token: " + token)
             server$(async (data: FormData, token: string) => {
+                console.log("Secret: " + (process.env.RECAPTCHA_SECRET ?? "unknown"))
                 const resp = await (await fetch(
                     "https://www.google.com/recaptcha/api/siteverify", 
                     {
