@@ -24,6 +24,7 @@ export default function Home() {
         if(!isServer) {
             const recaptcha = await recaptchaPromise
             const token = await recaptcha.execute("postURL")
+            console.log("Token: " + token)
             server$(async (data: FormData, token: string) => {
                 const resp = await (await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET ?? "unknown"}&response=${token}`, { method: "POST" })).json()
                 if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.65) {
@@ -32,7 +33,6 @@ export default function Home() {
             })(data, token)
         }
     })
-    let ref: HTMLParagraphElement
     function LinkPreview(props: {
         link: Accessor<string>
     }) {
