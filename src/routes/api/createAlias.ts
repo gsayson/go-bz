@@ -17,7 +17,7 @@ export async function POST(apiEvent: APIEvent) {
     if(
         !data.token || !data.aliasPath || !data.urlToAlias || !data.dayExpiry
         || data.aliasPath == "api" || data.aliasPath == "success" || /[^a-zA-Z0-9\.~_-]|\s/g.test(data.aliasPath)
-        || data.aliasPath > 32
+        || data.aliasPath.length > 32
     ) {
         return json({
             success: false,
