@@ -1,5 +1,5 @@
-import { Accessor, Setter, Show, createEffect, createSignal } from "solid-js"
-import { createRouteAction, createRouteData, useRouteData } from "solid-start"
+import { Accessor, Show, createSignal } from "solid-js"
+import { createRouteAction, useRouteData } from "solid-start"
 import { kv } from "@vercel/kv"
 import server$, { createServerData$ } from "solid-start/server"
 import { ReCaptchaInstance, load } from "recaptcha-v3"
@@ -26,7 +26,14 @@ export default function Home() {
             const token = await recaptcha.execute("postURL")
             console.log("Token: " + token)
             server$(async (data: FormData, token: string) => {
-                const resp = await (await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET ?? "unknown"}&response=${token}`, { method: "POST" })).json()
+                const resp = await (await fetch(
+                    "https://www.google.com/recaptcha/api/siteverify", 
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `secret=${process.env.RECAPTCHA_SECRET ?? "unknown"}&response=${token}`
+                    }
+                )).json()
                 console.log(resp)
                 if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.65) {
                     await kv.set(data.get("newURL")!.toString(), data.get("toAlias")!.toString())
