@@ -69,20 +69,24 @@ export default function Home() {
                 <label for="input-group-1" class="block mb-2 text-sm font-medium text-black dark:text-white">URL to alias</label>
                 <input type="url" name="toAlias" spellcheck={false} class={`font-mono bg-gray-300 text-black text-sm block w-full p-2.5 mb-4 dark:bg-[#1c1c1c] border ${error() ? "border-red-600" : "border-transparent"} placeholder-gray-500 dark:placeholder-[#5a5a5a] dark:text-white`}
                 placeholder="https://gsn.bz" autoCapitalize="off" autocomplete="off" autocorrect="off" required={true} onKeyPress={(event) => {
-                    if(/\s/g.test(event.key)) event.preventDefault()
+                    if(/[^a-zA-Z0-9\.~_-]|\s/g.test(event.key)) event.preventDefault()
                 }} onChange={(event) => {
-                    event.target.textContent?.replaceAll(/[^a-zA-Z0-9\.~_-]/g, "")
+                    event.currentTarget.value?.replaceAll(/[^a-zA-Z0-9\.~_-]|\s/g, "")
+                }} onPaste={(event) => {
+                    event.currentTarget.value = event.currentTarget.value.replaceAll(/[^a-zA-Z0-9\.~_-]|\s/g, "").substring(0, 32)
                 }}/>
-                <label for="input-group-1" class="block mb-2 text-sm font-medium text-black dark:text-white">Customize your link</label>
+                <label for="input-group-1" class="block mb-2 text-sm font-medium text-black dark:text-white">Customize your link (max 32 chars)</label>
                 <input type="text" name="newURL" class={`font-mono bg-gray-300 text-black text-sm block w-full p-2.5 mb-4 dark:bg-[#1c1c1c] border ${error() ? "border-red-600" : "border-transparent"} placeholder-gray-500 dark:placeholder-[#5a5a5a] dark:text-white`}
                 placeholder="helloWorld" autoCapitalize="off" autocomplete="off" autocorrect="off" required={true} spellcheck={false} onKeyPress={(event) => {
-                    if(/\s/g.test(event.key)) {
+                    if(/[^a-zA-Z0-9\.~_-]|\s/g.test(event.key) || event.currentTarget.value.length >= 32) {
                         event.preventDefault()
                         return
                     }
                 }} onChange={(event) => {
-                    event.target.textContent?.replaceAll(/[^a-zA-Z0-9\.~_-]/g, "")
+                    event.currentTarget.value?.replaceAll(/[^a-zA-Z0-9\.~_-]|\s/g, "")
                     setNewLink(event.currentTarget.value ?? "")
+                }} onPaste={(event) => {
+                    event.currentTarget.value = event.currentTarget.value.replaceAll(/[^a-zA-Z0-9\.~_-]|\s/g, "").substring(0, 32)
                 }}/>
                 <label for="input-group-1" class="block mb-2 text-sm font-medium text-black dark:text-white">Select your link's lifetime</label>
                 <select name="expiry" required={true} class={`bg-gray-300 text-black text-sm w-full p-2.5 mb-4 dark:bg-[#1c1c1c] border ${error() ? "border-red-600" : "border-transparent"} dark:text-white`}>

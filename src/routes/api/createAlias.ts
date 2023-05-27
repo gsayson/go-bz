@@ -3,7 +3,7 @@ import { APIEvent, json } from "solid-start"
 
 const ERROR_MESSAGES = {
     alreadyTaken: "The alias is already taken.",
-    badRequest: "The alias path cannot be \"api\" or \"success\".",
+    badRequest: "bad request lol",
     unavailable: "The service is unavailable."
 }
 
@@ -16,7 +16,8 @@ export async function POST(apiEvent: APIEvent) {
     }>)
     if(
         !data.token || !data.aliasPath || !data.urlToAlias || !data.dayExpiry
-        || data.aliasPath == "api" || data.aliasPath == "success" || /[^a-zA-Z0-9\.~_-]/g.test(data.aliasPath)
+        || data.aliasPath == "api" || data.aliasPath == "success" || /[^a-zA-Z0-9\.~_-]|\s/g.test(data.aliasPath)
+        || data.aliasPath > 32
     ) {
         return json({
             success: false,
