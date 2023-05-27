@@ -1,5 +1,5 @@
 import { Accessor, Show, createSignal } from "solid-js"
-import { createRouteAction, useRouteData } from "solid-start"
+import { createRouteAction, useNavigate, useRouteData } from "solid-start"
 import { createServerData$ } from "solid-start/server"
 import { ReCaptchaInstance, load } from "recaptcha-v3"
 import { isServer } from "solid-js/web"
@@ -19,6 +19,7 @@ export default function Home() {
     }
     const [newLink, setNewLink] = createSignal("")
     const [error, setError] = createSignal(false)
+    const [errorMsg, setErrorMsg] = createSignal<string | undefined>(undefined)
     const [_, { Form }] = createRouteAction(async (data: FormData) => {
         if(!isServer) {
             const recaptcha = await recaptchaPromise
@@ -36,7 +37,15 @@ export default function Home() {
                     })
                 }
             )
-            setError(!response.ok || (await response.json()).success == false)
+            const json = await response.json()
+            if(!response.ok || json.success == false) {
+                setError(true)
+                setErrorMsg(json.message)
+            } else {
+                setError(false)
+                setErrorMsg(undefined)
+                window.location.assign(`/success/${data.get("newURL")!.toString()}`)
+            }
         }
     })
     function LinkPreview(props: {
@@ -84,7 +93,7 @@ export default function Home() {
                     <option value={28}>4 weeks</option>
                 </select>
                 <Show when={true}>
-                    <p class="text-red-700 dark:text-red-500 mb-3">The "Forever" lifetime is coming soon.</p>
+                    <p class="text-red-700 dark:text-red-500 mb-3">{errorMsg()}</p>
                 </Show>
                 <LinkPreview link={newLink}/>
                 <input type="submit" class="bg-blue-700 hover:bg-blue-600 disabled:hover:cursor-default disabled:bg-blue-800 disabled:text-gray-400 disabled:hover:bg-blue-800 transition-colors duration-150 text-sm p-[0.625rem] w-full text-center text-white hover:cursor-pointer" value="Alias URL"/>

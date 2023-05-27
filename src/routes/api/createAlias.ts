@@ -1,6 +1,12 @@
 import { kv } from "@vercel/kv"
 import { APIEvent, json } from "solid-start"
 
+const ERROR_MESSAGES = {
+    alreadyTaken: "The alias is already taken.",
+    badRequest: "The alias path cannot be \"api\" or \"success\".",
+    unavailable: "The service is unavailable."
+}
+
 export async function POST(apiEvent: APIEvent) {
     const data = await (await new Response(apiEvent.request.body).json() as Promise<{
         token: string,
@@ -13,7 +19,8 @@ export async function POST(apiEvent: APIEvent) {
         || data.aliasPath == "api" || data.aliasPath == "success" || /[^a-zA-Z0-9\.~_-]/g.test(data.aliasPath)
     ) {
         return json({
-            success: false
+            success: false,
+            message: ERROR_MESSAGES.badRequest
         }, {
             status: 400
         })
@@ -27,17 +34,21 @@ export async function POST(apiEvent: APIEvent) {
         }
     )).json()
     if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.675) {
+        const response = await kv.set(data.aliasPath, data.urlToAlias, {
+            ex: 86400 * data.dayExpiry,
+            nx: true
+        })
+        console.log("Response is: " + response)
         return json({
-            success: (await kv.set(data.aliasPath, data.urlToAlias, {
-                ex: 86400 * data.dayExpiry,
-                nx: true
-            })) == "OK"
+            success: response == "OK",
+            message: response == "OK" ? undefined : ERROR_MESSAGES.alreadyTaken
         }, {
-            status: 200
+            status: response == "OK" ? 200 : 409
         })
     } else {
         return json({
-            success: false
+            success: false,
+            message: ERROR_MESSAGES.unavailable
         }, {
             status: 503
         })
