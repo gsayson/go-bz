@@ -23,23 +23,21 @@ export default function Home() {
     const [_, { Form }] = createRouteAction(async (data: FormData) => {
         if(!isServer) {
             const recaptcha = await recaptchaPromise
+            console.log(recaptcha.getSiteKey())
             const token = await recaptcha.execute("postURL")
             console.log("Token: " + token)
-            server$(async (data: FormData, token: string) => {
-                console.log("Secret: " + (process.env.RECAPTCHA_SECRET ?? "unknown"))
-                const resp = await (await fetch(
-                    "https://www.recaptcha.net/recaptcha/api/siteverify", 
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `secret=${process.env.RECAPTCHA_SECRET ?? "unknown"}&response=${token}`
-                    }
-                )).json()
-                console.log(resp)
-                if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.65) {
-                    await kv.set(data.get("newURL")!.toString(), data.get("toAlias")!.toString())
+            await fetch(
+                "/api/createAlias", 
+                {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        token: token,
+                        urlToAlias: data.get("toAlias")!.toString(),
+                        aliasPath: data.get("newURL")!.toString(),
+                    })
                 }
-            })(data, token)
+            )
         }
     })
     function LinkPreview(props: {

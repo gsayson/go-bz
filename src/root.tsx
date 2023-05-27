@@ -28,8 +28,9 @@ export default function Root() {
                         <Routes>
                             <FileRoutes/>
                         </Routes>
-                        <footer class="absolute bottom-4 left-4 text-gray-400 dark:text-[#5a5a5a]">
-                            <p class="font-mono"><A href="/" class="hover:underline">go.gsn.bz</A> 1.0.0</p>
+                        <footer class="absolute bottom-4 left-4 text-gray-400 dark:text-[#5a5a5a] p-4 bg-white dark:bg-[#0b0b0b] rounded-xl">
+                            <p class="font-mono"><A href="/" class="hover:underline">go.gsn.bz</A> {(process.env.VERCEL_GIT_COMMIT_SHA as string).substring(0, 6) ?? "gitSHA"}</p>
+                            <p class="font-mono">{process.env.VERCEL_ENV ?? "development"} build</p>
                         </footer>
                     </ErrorBoundary>
                 </Suspense> 
