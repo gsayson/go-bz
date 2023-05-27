@@ -1,7 +1,6 @@
 import { Accessor, Show, createSignal } from "solid-js"
 import { createRouteAction, useRouteData } from "solid-start"
-import { kv } from "@vercel/kv"
-import server$, { createServerData$ } from "solid-start/server"
+import { createServerData$ } from "solid-start/server"
 import { ReCaptchaInstance, load } from "recaptcha-v3"
 import { isServer } from "solid-js/web"
 
@@ -23,10 +22,8 @@ export default function Home() {
     const [_, { Form }] = createRouteAction(async (data: FormData) => {
         if(!isServer) {
             const recaptcha = await recaptchaPromise
-            console.log(recaptcha.getSiteKey())
             const token = await recaptcha.execute("postURL")
-            console.log("Token: " + token)
-            await fetch(
+            const response = await fetch(
                 "/api/createAlias", 
                 {
                     method: "POST",
@@ -35,9 +32,11 @@ export default function Home() {
                         token: token,
                         urlToAlias: data.get("toAlias")!.toString(),
                         aliasPath: data.get("newURL")!.toString(),
+                        dayExpiry: data.get("expiry")!.valueOf() as number,
                     })
                 }
             )
+            setError(!response.ok)
         }
     })
     function LinkPreview(props: {
@@ -50,7 +49,7 @@ export default function Home() {
                     <p class="text-gray-400 dark:text-[#5a5a5a] mb-6">Please customize your link.</p>
                 }
             >
-                <p class="text-gray-400 dark:text-[#5a5a5a] mb-6">Your URL will appear as <span class="font-mono"> https://go.gsn.bz/{props.link().trim().length != 0 ? props.link() : "<random ID>"}</span>.</p>
+                <p class="text-gray-400 dark:text-[#5a5a5a] mb-6">Your URL will appear as <span class="font-mono"> https://go.gsn.bz/{props.link()}</span>.</p>
             </Show>
         )
     }
@@ -63,7 +62,7 @@ export default function Home() {
                 placeholder="https://gsn.bz" autoCapitalize="off" autocomplete="off" autocorrect="off" required={true} onKeyPress={(event) => {
                     if(/\s/g.test(event.key)) event.preventDefault()
                 }} onChange={(event) => {
-                    event.target.textContent?.replaceAll(/\s/g, "")
+                    event.target.textContent?.replaceAll(/[^a-zA-Z0-9\.~_-]/g, "")
                 }}/>
                 <label for="input-group-1" class="block mb-2 text-sm font-medium text-black dark:text-white">Customize your link</label>
                 <input type="text" name="newURL" class={`font-mono bg-gray-300 text-black text-sm block w-full p-2.5 mb-4 dark:bg-[#1c1c1c] border ${error() ? "border-red-600" : "border-transparent"} placeholder-gray-500 dark:placeholder-[#5a5a5a] dark:text-white`}
@@ -73,15 +72,16 @@ export default function Home() {
                         return
                     }
                 }} onChange={(event) => {
-                    event.target.textContent?.replaceAll(/\s/g, "")
+                    event.target.textContent?.replaceAll(/[^a-zA-Z0-9\.~_-]/g, "")
                     setNewLink(event.currentTarget.value ?? "")
                 }}/>
                 <label for="input-group-1" class="block mb-2 text-sm font-medium text-black dark:text-white">Select your link's lifetime</label>
                 <select name="expiry" required={true} class={`bg-gray-300 text-black text-sm w-full p-2.5 mb-4 dark:bg-[#1c1c1c] border ${error() ? "border-red-600" : "border-transparent"} dark:text-white`}>
-                    <option value="d1" selected>1 day</option>
-                    <option value="d5">5 days</option>
-                    <option value="w1">1 week</option>
-                    <option value="w2">2 weeks</option>
+                    <option value={1} selected>1 day</option>
+                    <option value={5}>5 days</option>
+                    <option value={7}>1 week</option>
+                    <option value={14}>2 weeks</option>
+                    <option value={28}>4 weeks</option>
                 </select>
                 <Show when={true}>
                     <p class="text-red-700 dark:text-red-500 mb-3">The "Forever" lifetime is coming soon.</p>

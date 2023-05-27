@@ -5,9 +5,13 @@ export async function POST(apiEvent: APIEvent) {
     const data = await (await new Response(apiEvent.request.body).json() as Promise<{
         token: string,
         urlToAlias: string,
-        aliasPath: string
+        aliasPath: string,
+        dayExpiry: number
     }>)
-    if(!data.token) {
+    if(
+        !data.token || !data.aliasPath || !data.urlToAlias || !data.dayExpiry
+        || data.aliasPath == "api" || data.aliasPath == "success" || /[^a-zA-Z0-9\.~_-]/g.test(data.aliasPath)
+    ) {
         return json({
             success: false
         }, {
@@ -23,7 +27,9 @@ export async function POST(apiEvent: APIEvent) {
         }
     )).json()
     if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.675) {
-        await kv.set(data.aliasPath, data.urlToAlias)
+        await kv.set(data.aliasPath, data.urlToAlias, {
+            ex: 86400 * data.dayExpiry
+        })
         return json({
             success: true
         }, {

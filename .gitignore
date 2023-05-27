@@ -1,4 +1,5 @@
-
+.env.development.local
+.env
 dist
 .solid
 .output
