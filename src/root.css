@@ -2,6 +2,10 @@
     font-family: "Inter";
     src: url("/inter.ttf");
 }
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/jb.ttf");
+}
 
 @tailwind base;
 @tailwind components;
