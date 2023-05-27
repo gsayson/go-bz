@@ -33,7 +33,7 @@ export async function POST(apiEvent: APIEvent) {
             body: `secret=${process.env.RECAPTCHA_SECRET ?? "unknown"}&response=${data.token}`
         }
     )).json()
-    if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.675) {
+    if(resp.success && resp.action == "postURL" && resp.score >= 0.675) {
         const response = await kv.set(data.aliasPath, data.urlToAlias, {
             ex: 86400 * data.dayExpiry,
             nx: true
