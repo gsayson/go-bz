@@ -28,7 +28,7 @@ export default function Home() {
             server$(async (data: FormData, token: string) => {
                 console.log("Secret: " + (process.env.RECAPTCHA_SECRET ?? "unknown"))
                 const resp = await (await fetch(
-                    "https://www.google.com/recaptcha/api/siteverify", 
+                    "https://www.recaptcha.net/recaptcha/api/siteverify", 
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
