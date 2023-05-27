@@ -36,7 +36,7 @@ export default function Home() {
                     })
                 }
             )
-            setError(!response.ok)
+            setError(!response.ok || (await response.json()).success == false)
         }
     })
     function LinkPreview(props: {

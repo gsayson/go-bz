@@ -27,11 +27,11 @@ export async function POST(apiEvent: APIEvent) {
         }
     )).json()
     if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.675) {
-        await kv.set(data.aliasPath, data.urlToAlias, {
-            ex: 86400 * data.dayExpiry
-        })
         return json({
-            success: true
+            success: (await kv.set(data.aliasPath, data.urlToAlias, {
+                ex: 86400 * data.dayExpiry,
+                nx: true
+            })) == "OK"
         }, {
             status: 200
         })
