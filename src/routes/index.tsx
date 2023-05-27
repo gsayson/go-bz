@@ -1,7 +1,6 @@
 import { Accessor, Setter, Show, createEffect, createSignal } from "solid-js"
 import { createRouteAction, createRouteData, useRouteData } from "solid-start"
 import { kv } from "@vercel/kv"
-import { nanoid } from "nanoid"
 import server$, { createServerData$ } from "solid-start/server"
 import { ReCaptchaInstance, load } from "recaptcha-v3"
 import { isServer } from "solid-js/web"
@@ -24,14 +23,13 @@ export default function Home() {
     const [_, { Form }] = createRouteAction(async (data: FormData) => {
         if(!isServer) {
             const recaptcha = await recaptchaPromise
-            const action = nanoid(32)
-            const token = await recaptcha.execute(action)
-            server$(async (data: FormData, token: string, action: string) => {
+            const token = await recaptcha.execute("postURL")
+            server$(async (data: FormData, token: string) => {
                 const resp = await (await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET ?? "unknown"}&response=${token}`, { method: "POST" })).json()
-                if(resp.success && resp.action == action && resp.hostname == "localhost" && resp.score >= 0.65) {
+                if(resp.success && resp.action == "postURL" && resp.hostname == "localhost" && resp.score >= 0.65) {
                     await kv.set(data.get("newURL")!.toString(), data.get("toAlias")!.toString())
                 }
-            })(data, token, action)
+            })(data, token)
         }
     })
     let ref: HTMLParagraphElement
@@ -79,7 +77,7 @@ export default function Home() {
                     <option value="w2">2 weeks</option>
                 </select>
                 <Show when={true}>
-                    <p class="text-red-700 dark:text-red-500 mb-3">The "Forever" lifetime is only available for authenticated users. Please log in to create links.</p>
+                    <p class="text-red-700 dark:text-red-500 mb-3">The "Forever" lifetime is coming soon.</p>
                 </Show>
                 <LinkPreview link={newLink}/>
                 <input type="submit" class="bg-blue-700 hover:bg-blue-600 disabled:hover:cursor-default disabled:bg-blue-800 disabled:text-gray-400 disabled:hover:bg-blue-800 transition-colors duration-150 text-sm p-[0.625rem] w-full text-center text-white hover:cursor-pointer" value="Alias URL"/>
